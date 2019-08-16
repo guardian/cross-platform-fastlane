@@ -29,7 +29,7 @@ private_lane :merged_prs_since_last_beta_release do |options|
     DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_date) || # Pull request was merged before the earliest date provided
     pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
   }
-  PullRequest = Struct.new(:pr_number, :pr_title, :pr_author)
+  PullRequest = Struct.new(:number, :title, :author)
   prs = merged_prs_since_last_beta.map{ |pr|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"])
   }
