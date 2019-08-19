@@ -1,0 +1,63 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+
+private_lane :merged_prs_since_last_beta_release do |options|
+
+  repo = options[:repo]
+  github_token = options[:github_token]
+  github_label = options[:github_label]
+  earliest_date = options[:earliest_datetime]
+
+  # Find all PRs that have been merged to master since the last beta went out
+  closed_prs = github_api(
+    server_url: "https://api.github.com",
+    api_token: github_token,
+    http_method: "GET",
+    path: "/repos/guardian/#{repo}/pulls?state=closed?base=master"
+  )
+  recent_merge_commits = sh("git log --merges --format=\"%H\" -100").split("\n")
+  merged_prs_since_last_beta = closed_prs[:json].reject{ |pr|
+    !recent_merge_commits.include?(pr["merge_commit_sha"]) || # Pull request was never merged, or it was merged after git checkout
+    DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_date) || # Pull request was merged before the earliest date provided
+    pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
+  }
+  PullRequest = Struct.new(:number, :title, :author)
+  prs = merged_prs_since_last_beta.map{ |pr|
+    PullRequest.new(pr["number"], pr["title"], pr["user"]["login"])
+  }
+
+end
+
+private_lane :update_pr_after_beta_release do |options|
+
+  repo = options[:repo]
+  github_token = options[:github_token]
+  pr_number = options[:pr_number]
+  pr_author = options[:pr_author]
+  build_number = options[:build_number]
+
+  UI.message("Marking PR #{pr_number} as released to beta")
+  github_api(
+    server_url: "https://api.github.com",
+    api_token: github_token,
+    http_method: "POST",
+    path: "/repos/guardian/#{repo}/issues/#{pr_number}/labels",
+    body: { labels: ["released_to_beta"] }
+  )
+  github_api(
+    server_url: "https://api.github.com",
+    api_token: github_token,
+    http_method: "POST",
+    path: "/repos/guardian/#{repo}/issues/#{pr_number}/comments",
+    body: { body: "@#{pr_author}: these changes were released to beta in version `#{build_number}`." }
+  )
+
+end
