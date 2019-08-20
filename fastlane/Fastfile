@@ -21,11 +21,11 @@ private_lane :merged_prs_since_last_beta_release do |options|
     server_url: "https://api.github.com",
     api_token: github_token,
     http_method: "GET",
-    path: "/repos/guardian/#{repo}/pulls?state=closed?base=master"
+    path: "/repos/guardian/#{repo}/pulls?state=closed&base=master&sort=updated&direction=desc"
   )
-  recent_merge_commits = sh("git log --merges --format=\"%H\" -100").split("\n")
+  recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
   merged_prs_since_last_beta = closed_prs[:json].reject{ |pr|
-    !recent_merge_commits.include?(pr["merge_commit_sha"]) || # Pull request was never merged, or it was merged after git checkout
+    !recent_commits.include?(pr["merge_commit_sha"]) || # Pull request was never merged, or it was merged after git checkout
     DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_date) || # Pull request was merged before the earliest date provided
     pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
   }
