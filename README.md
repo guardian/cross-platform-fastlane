@@ -4,7 +4,7 @@
 
 To use the [custom actions](https://docs.fastlane.tools/create-action/#local-actions) and lanes defined in this repo, include the following [import](https://docs.fastlane.tools/advanced/Fastfile/#importing-another-fastfile) at the top of your [`Fastfile`](https://docs.fastlane.tools/advanced/Fastfile/#fastfile): 
 
-`import_from_git(url:"git@github.com:guardian/cross-platform-fastlane.git", path:"fastlane/Fastfile")`
+`import_from_git(url:"https://github.com/guardian/cross-platform-fastlane.git", path:"fastlane/Fastfile")`
 
 This will allow you to run an action from this repo in the same way that you'd use a [built-in action](https://docs.fastlane.tools/actions/), for example:
 
