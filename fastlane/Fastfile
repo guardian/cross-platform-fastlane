@@ -21,7 +21,7 @@ private_lane :merged_prs_since_last_beta_release do |options|
     server_url: "https://api.github.com",
     api_token: github_token,
     http_method: "GET",
-    path: "/repos/guardian/#{repo}/pulls?state=closed&base=master&sort=updated&direction=desc"
+    path: "/repos/guardian/#{repo}/pulls?state=closed&base=master&sort=closed&direction=desc"
   )
   recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
   merged_prs_since_last_beta = closed_prs[:json].reject{ |pr|
