@@ -9,12 +9,13 @@
 #
 #     https://docs.fastlane.tools/plugins/available-plugins
 
-private_lane :merged_prs_since_last_beta_release do |options|
+private_lane :merged_prs_since_last_release do |options|
 
   repo = options[:repo]
   github_token = options[:github_token]
   github_label = options[:github_label]
-  earliest_date = options[:earliest_datetime]
+  earliest_datetime = options[:earliest_datetime]
+  ensure_git_log_includes_pr = options[:ensure_git_log_includes_pr]
 
   # Find all PRs that have been merged to master since the last beta went out
   closed_prs = github_api(
@@ -23,16 +24,28 @@ private_lane :merged_prs_since_last_beta_release do |options|
     http_method: "GET",
     path: "/repos/guardian/#{repo}/pulls?state=closed&base=master&sort=closed&direction=desc"
   )
-  recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
-  merged_prs_since_last_beta = closed_prs[:json].reject{ |pr|
-    !recent_commits.include?(pr["merge_commit_sha"]) || # Pull request was never merged, or it was merged after git checkout
-    DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_date) || # Pull request was merged before the earliest date provided
+
+  merged_prs_since_last_labelling = closed_prs[:json].reject{ |pr|
+    pr["merged_at"].nil? || # Pull request was never merged
+    DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_datetime) || # Pull request was merged before the earliest date provided
     pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
   }
-  PullRequest = Struct.new(:number, :title, :author)
-  prs = merged_prs_since_last_beta.map{ |pr|
-    PullRequest.new(pr["number"], pr["title"], pr["user"]["login"])
+
+  PullRequest = Struct.new(:number, :title, :author, :merge_sha, :merged_at)
+  all_prs_since_last_labelling = merged_prs_since_last_labelling.map{ |pr|
+    PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"])
   }
+
+  result = if ensure_git_log_includes_pr
+    all_prs_since_last_labelling.reject { |pr|
+      !recent_commits.include?(pr.merge_sha)
+    }
+  else
+    all_prs_since_last_labelling
+  end
+
+  UI.message("Result: #{result}")
+  result
 
 end
 
@@ -59,5 +72,73 @@ private_lane :update_pr_after_beta_release do |options|
     path: "/repos/guardian/#{repo}/issues/#{pr_number}/comments",
     body: { body: "@#{pr_author}: these changes were released to beta in version `#{build_number}`." }
   )
+
+end
+
+private_lane :find_included_templates_versions do
+
+  recent_commits = sh("git log --format=\"%s\" -1000").split("\n")
+
+  # Templates commit messages are like this: Update to mobile-apps-article-templates@1.0.247
+  recent_templates_commits = recent_commits.select { |commit| commit.include?("Update to mobile-apps-article-templates") }
+  recent_templates_version_bumps = recent_templates_commits.map { |commit|
+    commit.split("\@")[1]
+  }
+
+end
+
+private_lane :update_released_templates_prs do |options|
+
+  github_token = options[:github_token]
+  release_time = if options[:release_time].nil?
+    UI.message("No release time specified. Assuming the release has just happened...")
+    DateTime.now
+  else
+    UI.message("Release time of #{options[:release_time]} was specified")
+    DateTime.parse(options[:release_time])
+  end
+
+  templates_repo = "mobile-apps-article-templates"
+
+  Tag = Struct.new(:commit_sha, :templates_version)
+  PullRequestNumberWithTemplatesVersion = Struct.new(:number, :title, :author, :merge_sha, :merged_at, :templates_version)
+
+  merged_prs = merged_prs_since_last_release(
+    repo: templates_repo,
+    github_token: github_token,
+    github_label: "released_to_prod",
+    earliest_datetime: "2019-09-01T09:00:00Z", # We normally use labels to figure out what has been released, but labelling only started at this datetime
+    ensure_git_log_includes_pr: false
+  )
+
+  tagsForTemplatesRepo = github_api(
+    server_url: "https://api.github.com",
+    api_token: github_token,
+    http_method: "GET",
+    path: "/repos/guardian/#{templates_repo}/tags"
+  )
+
+  tags = tagsForTemplatesRepo[:json].map { |tag| Tag.new(tag["commit"]["sha"], tag["name"]) }
+
+  all_prs_with_versions = merged_prs.map { |pr|
+    correspondingTag = tags.find { |tag| tag.commit_sha == pr.merge_sha }
+    PullRequestNumberWithTemplatesVersion.new(pr.number, pr.title, pr.author, pr.merge_sha, pr.merged_at, correspondingTag.templates_version)
+  }
+
+  templates_versions_included_in_git_log = find_included_templates_versions
+
+  released_prs_with_version = all_prs_with_versions.select { |pr_with_version|
+    templates_versions_included_in_git_log.include?(pr_with_version.templates_version)
+  }
+
+  UI.message("Released PRs: #{released_prs_with_version}")
+
+  released_prs_with_version.map { |pr_with_version|
+    merge_time = pr_with_version.merged_at
+    time_to_release = ((release_time - DateTime.parse(pr_with_version.merged_at)) * 24 * 60).to_i
+    UI.message("PR #{pr_with_version.number} (templates version #{pr_with_version.templates_version}) was released to prod. Merge time: #{merge_time} | Release time: #{release_time} | Time to release: #{time_to_release} minutes")
+  }
+
+  # Add label to PR here
 
 end
