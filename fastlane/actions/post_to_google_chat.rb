@@ -5,7 +5,9 @@ module Fastlane
 
     class PostToGoogleChatAction < Action
       def self.run(options)
-        response = Faraday.post(options[:webhook_url], "{\"text\": \"#{options[:message]}\"}", "Content-Type" => "application/json")
+        cleanedChangelog = options[:message].delete('"')
+        body = %Q[{"text": "#{cleanedChangelog}"}]
+        response = Faraday.post(options[:webhook_url], body, "Content-Type" => "application/json")
         if response.status == 200
           UI.success("Successfully posted message to Google Chat")
         else
