@@ -109,7 +109,7 @@ private_lane :calculate_templates_release_times do |options|
     repo: templates_repo,
     github_token: github_token,
     github_label: "released_to_prod_#{platform}",
-    earliest_datetime: "2019-10-03T09:00:00Z", # This prevents us from labelling which have already been released
+    earliest_datetime: "2019-10-03T09:00:00Z", # This prevents us from labelling PRs which have already been released
     ensure_git_log_includes_pr: false
   )
 
