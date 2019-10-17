@@ -149,7 +149,7 @@ private_lane :calculate_templates_release_times do |options|
 
     if update_github
       # Label PR so that it is ignored during the next release
-      UI.message("Marking PR #{pr_number} as released to production (on #{platform})")
+      UI.message("Marking PR #{pr_with_version.number} as released to production (on #{platform})")
       github_api(
         server_url: "https://api.github.com",
         api_token: github_token,
