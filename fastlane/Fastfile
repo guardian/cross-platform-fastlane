@@ -80,7 +80,7 @@ private_lane :add_tag do |options|
   commit_sha = options[:commit_sha]
   tag_name = options[:tag_name]
 
-  UI.message("Adding tag #{tag_name} to #{repo} repo")
+  UI.message("Adding tag #{tag_name} to commit #{commit_sha} for the #{repo} repo...")
   github_api(
     server_url: "https://api.github.com",
     api_token: github_token,
@@ -88,8 +88,8 @@ private_lane :add_tag do |options|
     path: "/repos/guardian/#{repo}/git/refs",
     body: { "ref": "refs/tags/#{tag_name}", "sha": "#{commit_sha}" }
   )
-  
-end  
+
+end
 
 private_lane :find_included_templates_versions do
 
