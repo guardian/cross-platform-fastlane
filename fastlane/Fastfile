@@ -31,9 +31,9 @@ private_lane :merged_prs_since_last_release do |options|
     pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
   }
 
-  PullRequest = Struct.new(:number, :title, :author, :merge_sha, :merged_at)
+  PullRequest = Struct.new(:number, :title, :author, :merge_sha, :merged_at, :body)
   all_prs_since_last_labelling = merged_prs_since_last_labelling.map{ |pr|
-    PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"])
+    PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
 
   result = if ensure_git_log_includes_pr
@@ -43,6 +43,29 @@ private_lane :merged_prs_since_last_release do |options|
     }
   else
     all_prs_since_last_labelling
+  end
+
+end
+
+private_lane :prepare_release_notes do |options|
+
+  prs = options[:prs]
+  optional_preamble = options[:preamble]
+  optional_postamble = options[:postamble] # Yes, it is a real word
+
+  release_notes = prs.map { |pr|
+    pr.body
+      .split("<!--beta_release_notes_start-->").last
+      .split("<!--beta_release_notes_end-->").first
+      .strip
+  }
+
+  release_note_bullets = release_notes.map{ |release_note_line| "* #{release_note_line}" }.join("\n")
+
+  if release_note_bullets.empty?
+    "Please use the app as you normally would and let us know if you spot any problems."
+  else
+    "#{optional_preamble}\n#{release_note_bullets}\n#{optional_postamble}"
   end
 
 end
