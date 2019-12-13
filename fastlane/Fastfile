@@ -53,6 +53,7 @@ private_lane :prepare_release_notes do |options|
   optional_preamble = options[:preamble]
   optional_postamble = options[:postamble] # Yes, it is a real word
 
+  # Discard any PR which omits the release_notes tags
   prs_with_release_notes = prs.select { |pr|
     pr.body.include?("<!--beta_release_notes_start-->") && pr.body.include?("<!--beta_release_notes_end-->")
   }
@@ -65,6 +66,7 @@ private_lane :prepare_release_notes do |options|
   }
 
   release_note_bullets = release_notes
+    .reject { |release_note_line| release_note_line.empty? } # Discard any blank release note messages
     .map{ |release_note_line| "* #{release_note_line}" }.join("\n")
 
   if release_note_bullets.empty?
