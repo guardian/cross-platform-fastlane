@@ -73,7 +73,7 @@ private_lane :prepare_release_notes do |options|
   optional_preamble = options[:preamble]
   optional_postamble = options[:postamble] # Yes, it is a real word
 
-  release_note_bullets = extract_release_notes(prs).map{ |release_note_line| "* #{release_note_line}" }.join("\n")
+  release_note_bullets = extract_release_notes(prs: prs).map{ |release_note_line| "* #{release_note_line}" }.join("\n")
 
   if release_note_bullets.empty?
     "Please use the app as you normally would and let us know if you spot any problems."
