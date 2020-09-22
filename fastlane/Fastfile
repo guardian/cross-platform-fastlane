@@ -49,7 +49,12 @@ end
 
 private_lane :extract_release_notes do |options|
 
-  environment = options[:environment]
+  if options[:environment].to_s == ""
+    environment = "beta"
+  else
+    environment = options[:environment]
+  end
+
   prs = options[:prs]
 
   regex_start = "<!--#{environment}_release_notes_start-->"
