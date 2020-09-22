@@ -49,17 +49,21 @@ end
 
 private_lane :extract_release_notes do |options|
 
+  environment = options[:environment]
   prs = options[:prs]
+
+  regex_start = "<!--#{environment}_release_notes_start-->"
+  regex_end = "<!--#{environment}_release_notes_end-->"
 
   # Discard any PR which omits the release_notes tags
   prs_with_release_notes = prs.select { |pr|
-    pr.body.include?("<!--beta_release_notes_start-->") && pr.body.include?("<!--beta_release_notes_end-->")
+    pr.body.include?(regex_start) && pr.body.include?(regex_end)
   }
 
   release_notes = prs_with_release_notes.map { |pr|
     pr.body
-      .split("<!--beta_release_notes_start-->").last
-      .split("<!--beta_release_notes_end-->").first
+      .split(regex_start).last
+      .split(regex_end).first
       .strip
   }
 
@@ -69,11 +73,12 @@ end
 
 private_lane :prepare_release_notes do |options|
 
+  environment = options[:environment]
   prs = options[:prs]
   optional_preamble = options[:preamble]
   optional_postamble = options[:postamble] # Yes, it is a real word
 
-  release_note_bullets = extract_release_notes(prs: prs).map{ |release_note_line| "* #{release_note_line}" }.join("\n")
+  release_note_bullets = extract_release_notes(environment: environment, prs: prs).map{ |release_note_line| "* #{release_note_line}" }.join("\n")
 
   if release_note_bullets.empty?
     "Please use the app as you normally would and let us know if you spot any problems."
