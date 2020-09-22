@@ -86,7 +86,7 @@ private_lane :prepare_release_notes do |options|
   release_note_bullets = extract_release_notes(environment: environment, prs: prs).map{ |release_note_line| "* #{release_note_line}" }.join("\n")
 
   if release_note_bullets.empty?
-    "Please use the app as you normally would and let us know if you spot any problems."
+    "We've been fixing bugs and making improvements behind the scenes. For the best possible experience and to ensure you have access to all our latest features we recommend that you update to this latest version as soon as possible."
   else
     "#{optional_preamble}\n#{release_note_bullets}\n#{optional_postamble}"
   end
