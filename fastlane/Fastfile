@@ -93,6 +93,34 @@ private_lane :prepare_release_notes do |options|
 
 end
 
+private_lane :update_pr_after_release do |options|
+
+  repo = options[:repo]
+  github_token = options[:github_token]
+  pr_number = options[:pr_number]
+  pr_author = options[:pr_author]
+  full_version = options[:full_version]
+  environment = options[:environment]
+
+  UI.message("Marking PR #{pr_number} as released to #{environment}")
+  github_api(
+    server_url: "https://api.github.com",
+    api_token: github_token,
+    http_method: "POST",
+    path: "/repos/guardian/#{repo}/issues/#{pr_number}/labels",
+    body: { labels: ["released_to_#{environment}"] }
+  )
+  github_api(
+    server_url: "https://api.github.com",
+    api_token: github_token,
+    http_method: "POST",
+    path: "/repos/guardian/#{repo}/issues/#{pr_number}/comments",
+    body: { body: "@#{pr_author}: these changes were released to #{environment} in version `#{full_version}`." }
+  )
+
+end
+
+# This can be deleted in a couple of weeks, once everyone has stopped using it
 private_lane :update_pr_after_beta_release do |options|
 
   repo = options[:repo]
