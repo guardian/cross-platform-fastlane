@@ -17,13 +17,13 @@ private_lane :merged_prs_since_last_release do |options|
   earliest_datetime = options[:earliest_datetime]
   ensure_git_log_includes_pr = options[:ensure_git_log_includes_pr]
   
-  base_branch_name = if repo == "android-news-app"
-    "main"
+  base_branch_name = if options.has_key?(:base_branch_name)
+    options[:base_branch_name]
   else
     "master"
   end
 
-
+  
   # Find all PRs that have been merged to master since the last beta went out
   closed_prs = github_api(
     server_url: "https://api.github.com",
