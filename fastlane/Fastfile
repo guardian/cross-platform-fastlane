@@ -45,12 +45,12 @@ private_lane :merged_prs_since_last_release do |options|
 
   result = if ensure_git_log_includes_pr
     current_branch = sh("git branch --show-current")
-    sh("git checkout %f" % base_branch_name)
+    sh("git checkout %s" % base_branch_name)
     all_prs_since_last_labelling.reject { |pr|
       recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
       !recent_commits.include?(pr.merge_sha)
     }
-    sh("git checkout %f" % current_branch)
+    sh("git checkout %s" % current_branch)
   else
     all_prs_since_last_labelling
   end
