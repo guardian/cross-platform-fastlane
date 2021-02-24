@@ -24,7 +24,7 @@ private_lane :merged_prs_since_last_release do |options|
   end
 
   
-  # Find all PRs that have been merged to master since the last beta went out
+  # Find all PRs that have been merged to the base branch since the last beta went out
   closed_prs = github_api(
     server_url: "https://api.github.com",
     api_token: github_token,
