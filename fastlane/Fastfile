@@ -40,14 +40,13 @@ private_lane :merged_prs_since_last_release do |options|
   }
 
   UI.message("Merged PRs length:\n#{merged_prs_since_last_labelling.length()}")
-  UI.message("Merged PRs:\n#{merged_prs_since_last_labelling}")
 
   PullRequest = Struct.new(:number, :title, :author, :merge_sha, :merged_at, :body)
   all_prs_since_last_labelling = merged_prs_since_last_labelling.map{ |pr|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
 
-  UI.message("All PRs:\n#{all_prs_since_last_labelling}")
+  UI.message("All PRs length:\n#{all_prs_since_last_labelling.length()}")
 
   #TODO: This should be the default. Why would you ever want the opposite?
   result = if ensure_git_log_includes_pr
