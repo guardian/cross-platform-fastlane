@@ -39,14 +39,10 @@ private_lane :merged_prs_since_last_release do |options|
     pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
   }
 
-  UI.message("Merged PRs:\n#{merged_prs_since_last_labelling}")
-
   PullRequest = Struct.new(:number, :title, :author, :merge_sha, :merged_at, :body)
   all_prs_since_last_labelling = merged_prs_since_last_labelling.map{ |pr|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
-
-  UI.message("All PRs:\n#{all_prs_since_last_labelling}")
 
   result = if ensure_git_log_includes_pr
     current_branch = sh("git branch --show-current")
@@ -55,16 +51,12 @@ private_lane :merged_prs_since_last_release do |options|
     recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
     sh("git checkout %s" % current_branch)
 
-    UI.message("Recent commits:\n#{recent_commits}")
-
     all_prs_since_last_labelling.reject { |pr|
       !recent_commits.include?(pr.merge_sha)
     }
   else
     all_prs_since_last_labelling
   end
-
-  UI.message("Result:\n#{result}")
 
 end
 
