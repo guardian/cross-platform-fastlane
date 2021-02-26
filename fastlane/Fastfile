@@ -31,24 +31,17 @@ private_lane :merged_prs_since_last_release do |options|
     path: "/repos/guardian/#{repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100"
   )
 
-  UI.message("Closed PRs:\n#{closed_prs[:json].length()}")
-
   merged_prs_since_last_labelling = closed_prs[:json].reject{ |pr|
     pr["merged_at"].nil? || # Pull request was never merged
     DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_datetime) || # Pull request was merged before the earliest date provided
     pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
   }
 
-  UI.message("Merged PRs length:\n#{merged_prs_since_last_labelling.length()}")
-
   PullRequest = Struct.new(:number, :title, :author, :merge_sha, :merged_at, :body)
   all_prs_since_last_labelling = merged_prs_since_last_labelling.map{ |pr|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
 
-  UI.message("All PRs length:\n#{all_prs_since_last_labelling.length()}")
-
-  #TODO: This should be the default. Why would you ever want the opposite?
   result = if ensure_git_log_includes_pr
     current_branch = sh("git branch --show-current")
     sh("git fetch")
