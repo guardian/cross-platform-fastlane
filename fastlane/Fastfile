@@ -15,7 +15,6 @@ private_lane :merged_prs_since_last_release do |options|
   github_token = options[:github_token]
   github_label = options[:github_label]
   earliest_datetime = options[:earliest_datetime]
-  ensure_git_log_includes_pr = options[:ensure_git_log_includes_pr]
   
   base_branch_name = if options.has_key?(:base_branch_name)
     options[:base_branch_name]
@@ -43,14 +42,11 @@ private_lane :merged_prs_since_last_release do |options|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
 
-  result = if ensure_git_log_includes_pr
-    all_prs_since_last_labelling.reject { |pr|
-      recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
-      !recent_commits.include?(pr.merge_sha)
-    }
-  else
-    all_prs_since_last_labelling
-  end
+  # Only include PRs that actually made it into the git history (see https://github.com/guardian/android-news-app/pull/5339)
+  all_prs_since_last_labelling.reject { |pr|
+    recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
+    !recent_commits.include?(pr.merge_sha)
+  }
 
 end
 
