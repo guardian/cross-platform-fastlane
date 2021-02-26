@@ -23,7 +23,6 @@ private_lane :merged_prs_since_last_release do |options|
     "master"
   end
 
-  
   # Find all PRs that have been merged to the base branch since the last beta went out
   closed_prs = github_api(
     server_url: "https://api.github.com",
@@ -32,11 +31,15 @@ private_lane :merged_prs_since_last_release do |options|
     path: "/repos/guardian/#{repo}/pulls?state=closed&base=#{base_branch_name}&sort=created&direction=desc&per_page=100"
   )
 
+  UI.message("Closed PRs:\n#{closed_prs}")
+
   merged_prs_since_last_labelling = closed_prs[:json].reject{ |pr|
     pr["merged_at"].nil? || # Pull request was never merged
     DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_datetime) || # Pull request was merged before the earliest date provided
     pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
   }
+
+  UI.message("Merged PRs:\n#{merged_prs_since_last_labelling}")
 
   PullRequest = Struct.new(:number, :title, :author, :merge_sha, :merged_at, :body)
   all_prs_since_last_labelling = merged_prs_since_last_labelling.map{ |pr|
@@ -47,7 +50,7 @@ private_lane :merged_prs_since_last_release do |options|
 
   result = if ensure_git_log_includes_pr
     current_branch = sh("git branch --show-current")
-    sh("git fetch origin %s" % base_branch_name)
+    sh("git fetch")
     sh("git checkout %s" % base_branch_name)
     recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
     sh("git checkout %s" % current_branch)
