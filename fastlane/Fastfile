@@ -22,13 +22,13 @@ private_lane :merged_prs_since_last_release do |options|
     "master"
   end
 
-  
-  # Find all PRs that have been merged to master since the last beta went out
+  # Find all PRs that have been merged since the last beta went out
+  # Don't use `sort=updated` here, because some changes (e.g. branch names, labelling) may mass-update very old PRs.
   closed_prs = github_api(
     server_url: "https://api.github.com",
     api_token: github_token,
     http_method: "GET",
-    path: "/repos/guardian/#{repo}/pulls?state=closed&base=#{base_branch_name}&sort=created&direction=desc&per_page=100"
+    path: "/repos/guardian/#{repo}/pulls?state=closed&sort=created&direction=desc&per_page=100"
   )
 
   merged_prs_since_last_labelling = closed_prs[:json].reject{ |pr|
@@ -42,12 +42,15 @@ private_lane :merged_prs_since_last_release do |options|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
 
-  # Only include PRs that actually made it into the git history (see https://github.com/guardian/android-news-app/pull/5339)
+  current_branch = sh("git branch --show-current")
+  sh("git fetch")
+  sh("git checkout %s" % base_branch_name)
+  recent_commits = sh("git log --format=\"%H\" -100").split("\n")
+  sh("git checkout %s" % current_branch)
+
   all_prs_since_last_labelling.reject { |pr|
-    recent_commits = sh("git log --format=\"%H\" -1000").split("\n")
     !recent_commits.include?(pr.merge_sha)
   }
-
 end
 
 private_lane :extract_release_notes do |options|
