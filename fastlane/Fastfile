@@ -15,7 +15,6 @@ private_lane :merged_prs_since_last_release do |options|
   github_token = options[:github_token]
   github_label = options[:github_label]
   earliest_datetime = options[:earliest_datetime]
-  ensure_git_log_includes_pr = options[:ensure_git_log_includes_pr]
   
   base_branch_name = if options.has_key?(:base_branch_name)
     options[:base_branch_name]
@@ -43,20 +42,15 @@ private_lane :merged_prs_since_last_release do |options|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
 
-  result = if ensure_git_log_includes_pr
-    current_branch = sh("git branch --show-current")
-    sh("git fetch")
-    sh("git checkout %s" % base_branch_name)
-    recent_commits = sh("git log --format=\"%H\" -100").split("\n")
-    sh("git checkout %s" % current_branch)
+  current_branch = sh("git branch --show-current")
+  sh("git fetch")
+  sh("git checkout %s" % base_branch_name)
+  recent_commits = sh("git log --format=\"%H\" -100").split("\n")
+  sh("git checkout %s" % current_branch)
 
-    all_prs_since_last_labelling.reject { |pr|
-      !recent_commits.include?(pr.merge_sha)
-    }
-  else
-    all_prs_since_last_labelling
-  end
-
+  all_prs_since_last_labelling.reject { |pr|
+    !recent_commits.include?(pr.merge_sha)
+  }
 end
 
 private_lane :extract_release_notes do |options|
