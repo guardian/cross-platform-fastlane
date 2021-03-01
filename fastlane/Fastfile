@@ -28,7 +28,7 @@ private_lane :merged_prs_since_last_release do |options|
     server_url: "https://api.github.com",
     api_token: github_token,
     http_method: "GET",
-    path: "/repos/guardian/#{repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100"
+    path: "/repos/guardian/#{repo}/pulls?state=closed&sort=created&direction=desc&per_page=100"
   )
 
   merged_prs_since_last_labelling = closed_prs[:json].reject{ |pr|
