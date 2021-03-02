@@ -42,7 +42,7 @@ private_lane :merged_prs_since_last_release do |options|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
 
-  current_branch = sh("git branch --show-current")
+  current_branch = sh("git rev-parse --abbrev-ref HEAD")
   sh("git fetch")
   sh("git checkout %s" % base_branch_name)
   recent_commits = sh("git log --format=\"%H\" -100").split("\n")
