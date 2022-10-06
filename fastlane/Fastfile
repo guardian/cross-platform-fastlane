@@ -30,6 +30,8 @@ private_lane :merged_prs_since_last_release do |options|
     http_method: "GET",
     path: "/repos/guardian/#{repo}/pulls?state=closed&sort=created&direction=desc&per_page=100"
   )
+  lane_context.delete(SharedValues::GITHUB_API_RESPONSE)
+  lane_context.delete(SharedValues::GITHUB_API_JSON)
 
   merged_prs_since_last_labelling = closed_prs[:json].reject{ |pr|
     pr["merged_at"].nil? || # Pull request was never merged
