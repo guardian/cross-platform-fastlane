@@ -219,6 +219,8 @@ private_lane :calculate_templates_release_times do |options|
     http_method: "GET",
     path: "/repos/guardian/#{templates_repo}/tags"
   )
+  lane_context.delete(SharedValues::GITHUB_API_RESPONSE)
+  lane_context.delete(SharedValues::GITHUB_API_JSON)
 
   tags = tagsForTemplatesRepo[:json].map { |tag| Tag.new(tag["commit"]["sha"], tag["name"]) }
 
