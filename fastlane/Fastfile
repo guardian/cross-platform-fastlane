@@ -101,6 +101,10 @@ private_lane :prepare_release_notes do |options|
 
 end
 
+# This lane has sleep(1) to be a good citizen of the github API and avoid
+# secondary API rate limits. From the documentation:
+# > If you're making a large number of POST [...] requests for a single
+# > user or client ID, wait at least one second between each request.
 private_lane :update_pr_after_release do |options|
 
   repo = options[:repo]
@@ -111,6 +115,7 @@ private_lane :update_pr_after_release do |options|
   environment = options[:environment]
 
   UI.message("Marking PR #{pr_number} as released to #{environment}")
+  sleep(1)
   github_api(
     server_url: "https://api.github.com",
     api_token: github_token,
@@ -118,6 +123,7 @@ private_lane :update_pr_after_release do |options|
     path: "/repos/guardian/#{repo}/issues/#{pr_number}/labels",
     body: { labels: ["released_to_#{environment}"] }
   )
+  sleep(1)
   github_api(
     server_url: "https://api.github.com",
     api_token: github_token,
