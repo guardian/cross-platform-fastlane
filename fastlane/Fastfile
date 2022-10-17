@@ -26,7 +26,7 @@ private_lane :merged_prs_since_last_release do |options|
   # Don't use `sort=updated` here, because some changes (e.g. branch names, labelling) may mass-update very old PRs.
   closed_prs = github_api(
     server_url: "https://api.github.com",
-    api_token: github_token,
+    api_bearer: github_token,
     http_method: "GET",
     path: "/repos/guardian/#{repo}/pulls?state=closed&sort=created&direction=desc&per_page=100"
   )
@@ -118,7 +118,7 @@ private_lane :update_pr_after_release do |options|
   sleep(1)
   github_api(
     server_url: "https://api.github.com",
-    api_token: github_token,
+    api_bearer: github_token,
     http_method: "POST",
     path: "/repos/guardian/#{repo}/issues/#{pr_number}/labels",
     body: { labels: ["released_to_#{environment}"] }
@@ -126,7 +126,7 @@ private_lane :update_pr_after_release do |options|
   sleep(1)
   github_api(
     server_url: "https://api.github.com",
-    api_token: github_token,
+    api_bearer: github_token,
     http_method: "POST",
     path: "/repos/guardian/#{repo}/issues/#{pr_number}/comments",
     body: { body: "@#{pr_author}: these changes were released to #{environment} in version `#{full_version}`." }
@@ -146,14 +146,14 @@ private_lane :update_pr_after_beta_release do |options|
   UI.message("Marking PR #{pr_number} as released to beta")
   github_api(
     server_url: "https://api.github.com",
-    api_token: github_token,
+    api_bearer: github_token,
     http_method: "POST",
     path: "/repos/guardian/#{repo}/issues/#{pr_number}/labels",
     body: { labels: ["released_to_beta"] }
   )
   github_api(
     server_url: "https://api.github.com",
-    api_token: github_token,
+    api_bearer: github_token,
     http_method: "POST",
     path: "/repos/guardian/#{repo}/issues/#{pr_number}/comments",
     body: { body: "@#{pr_author}: these changes were released to beta in version `#{build_number}`." }
@@ -171,7 +171,7 @@ private_lane :add_tag do |options|
   UI.message("Adding tag #{tag_name} to commit #{commit_sha} for the #{repo} repo...")
   github_api(
     server_url: "https://api.github.com",
-    api_token: github_token,
+    api_bearer: github_token,
     http_method: "POST",
     path: "/repos/guardian/#{repo}/git/refs",
     body: { "ref": "refs/tags/#{tag_name}", "sha": "#{commit_sha}" }
@@ -221,7 +221,7 @@ private_lane :calculate_templates_release_times do |options|
 
   tagsForTemplatesRepo = github_api(
     server_url: "https://api.github.com",
-    api_token: github_token,
+    api_bearer: github_token,
     http_method: "GET",
     path: "/repos/guardian/#{templates_repo}/tags"
   )
@@ -260,7 +260,7 @@ private_lane :calculate_templates_release_times do |options|
       UI.message("Marking PR #{pr_with_version.number} as released to production (on #{platform})")
       github_api(
         server_url: "https://api.github.com",
-        api_token: github_token,
+        api_bearer: github_token,
         http_method: "POST",
         path: "/repos/guardian/#{templates_repo}/issues/#{pr_with_version.number}}/labels",
         body: { labels: ["released_to_prod_#{platform}"] }
