@@ -22,6 +22,9 @@ private_lane :merged_prs_since_last_release do |options|
     "master"
   end
 
+    UI.message("Base branch name: #{base_branch_name}")
+
+
   # Find all PRs that have been merged since the last beta went out
   # Don't use `sort=updated` here, because some changes (e.g. branch names, labelling) may mass-update very old PRs.
   closed_prs = github_api(
@@ -33,18 +36,30 @@ private_lane :merged_prs_since_last_release do |options|
   lane_context.delete(SharedValues::GITHUB_API_RESPONSE)
   lane_context.delete(SharedValues::GITHUB_API_JSON)
 
+   UI.message("Closed PRs #{closed_prs}")
+
+
   merged_prs_since_last_labelling = closed_prs[:json].reject{ |pr|
     pr["merged_at"].nil? || # Pull request was never merged
     DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_datetime) || # Pull request was merged before the earliest date provided
     pr["labels"].map{|label| label["name"]}.include?(github_label) # Pull request was labelled as part of a previous release
   }
 
+    UI.message("Merged PRs since last labelling #{merged_prs_since_last_labelling}")
+
+
   PullRequest = Struct.new(:number, :title, :author, :merge_sha, :merged_at, :body)
   all_prs_since_last_labelling = merged_prs_since_last_labelling.map{ |pr|
     PullRequest.new(pr["number"], pr["title"], pr["user"]["login"], pr["merge_commit_sha"], pr["merged_at"], pr["body"])
   }
 
+  UI.message("All PRs since last labelling #{all_prs_since_last_labelling}")
+
+
   current_branch = sh("git rev-parse --abbrev-ref HEAD")
+
+  UI.message("Current branch: #{current_branch}")
+
   sh("git fetch")
   sh("git checkout %s" % base_branch_name)
   recent_commits = sh("git log --format=\"%H\" -1000", log:false).split("\n")
@@ -53,6 +68,11 @@ private_lane :merged_prs_since_last_release do |options|
   all_prs_since_last_labelling.reject { |pr|
     !recent_commits.include?(pr.merge_sha)
   }
+
+  UI.message("Post-rejection step: All PRs since last labelling #{all_prs_since_last_labelling}")
+
+  all_prs_since_last_labelling
+
 end
 
 private_lane :extract_release_notes do |options|
