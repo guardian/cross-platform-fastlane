@@ -65,13 +65,13 @@ private_lane :merged_prs_since_last_release do |options|
   recent_commits = sh("git log --format=\"%H\" -1000", log:false).split("\n")
   sh("git checkout %s" % current_branch)
 
-  all_prs_since_last_labelling.reject { |pr|
+  filtered = all_prs_since_last_labelling.reject { |pr|
     !recent_commits.include?(pr.merge_sha)
   }
 
-  UI.message("Post-rejection step: All PRs since last labelling #{all_prs_since_last_labelling}")
+  UI.message("Post-rejection step: All PRs since last labelling #{filtered}")
 
-  all_prs_since_last_labelling
+  filtered
 
 end
 
