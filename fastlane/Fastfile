@@ -62,6 +62,7 @@ private_lane :merged_prs_since_last_release do |options|
 
   sh("git fetch")
   sh("git checkout %s" % base_branch_name)
+  sh("git checkout --") # Discards modified files from e.g. GeneratedColors
   recent_commits = sh("git log --format=\"%H\" -1000", log:false).split("\n")
   
   UI.message("recent commits from tag branch: #{recent_commits}")
