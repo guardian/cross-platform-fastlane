@@ -53,7 +53,7 @@ private_lane :merged_prs_since_last_release do |options|
 
   UI.message("Current branch: #{current_branch}")
 
-  sh("git fetch")
+  sh("git fetch --unshallow")
   sh("git checkout %s" % base_branch_name)
   recent_commits = sh("git log --format=\"%H\" -1000", log:false).split("\n")
   
