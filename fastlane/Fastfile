@@ -15,7 +15,6 @@ private_lane :merged_prs_since_last_release do |options|
   github_token = options[:github_token]
   github_label = options[:github_label]
   earliest_datetime = options[:earliest_datetime]
-  post_release_step = options[:post_release_step]
   
   base_branch_name = if options.has_key?(:base_branch_name)
     options[:base_branch_name]
@@ -54,13 +53,7 @@ private_lane :merged_prs_since_last_release do |options|
 
   UI.message("Current branch: #{current_branch}")
 
-
-if post_release_step
-  sh("git fetch")
-else 
   sh("git fetch --unshallow")
-end
-
   sh("git checkout %s" % base_branch_name)
   recent_commits = sh("git log --format=\"%H\" -1000", log:false).split("\n")
   
