@@ -24,15 +24,34 @@ private_lane :merged_prs_since_last_release do |options|
 
   # Find all PRs that have been merged since the last beta went out
   # Don't use `sort=updated` here, because some changes (e.g. branch names, labelling) may mass-update very old PRs.
-  closed_prs = github_api(
+  closed_prs_page1 = github_api(
     server_url: "https://api.github.com",
     api_bearer: github_token,
     http_method: "GET",
-    path: "/repos/guardian/#{repo}/pulls?state=closed&sort=created&direction=desc&per_page=100"
+    path: "/repos/guardian/#{repo}/pulls?state=closed&sort=created&direction=desc&per_page=100&page=1"
   )
   lane_context.delete(SharedValues::GITHUB_API_RESPONSE)
   lane_context.delete(SharedValues::GITHUB_API_JSON)
 
+  closed_prs_page2 = github_api(
+    server_url: "https://api.github.com",
+    api_bearer: github_token,
+    http_method: "GET",
+    path: "/repos/guardian/#{repo}/pulls?state=closed&sort=created&direction=desc&per_page=100&page=2"
+  )
+  lane_context.delete(SharedValues::GITHUB_API_RESPONSE)
+  lane_context.delete(SharedValues::GITHUB_API_JSON)
+
+  closed_prs_page3 = github_api(
+    server_url: "https://api.github.com",
+    api_bearer: github_token,
+    http_method: "GET",
+    path: "/repos/guardian/#{repo}/pulls?state=closed&sort=created&direction=desc&per_page=100&page=3"
+  )
+  lane_context.delete(SharedValues::GITHUB_API_RESPONSE)
+  lane_context.delete(SharedValues::GITHUB_API_JSON)
+
+  closed_prs = closed_prs_page1 + closed_prs_page2 + closed_prs_page3
   merged_prs_since_last_labelling = closed_prs[:json].reject{ |pr|
     pr["merged_at"].nil? || # Pull request was never merged
     DateTime.parse(pr["merged_at"]) < DateTime.parse(earliest_datetime) || # Pull request was merged before the earliest date provided
